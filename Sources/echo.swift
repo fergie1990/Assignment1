@@ -1,6 +1,9 @@
 import Foundation
 
+let eof = "^Z"
+var line: String = ""
 
-while var line = readline() {
-  println(line)
+while line != eof {
+  line = readLine()!
+  print(line)
 }
