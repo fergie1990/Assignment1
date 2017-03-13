@@ -14,18 +14,16 @@ func readStdin() {
 
 //read from file
 func read (file: String) -> [String]{
-  //let fm = FileManager.default
-  //let docsurl = try! fm.url(for:.documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
-  //let myurl = docsurl.appendingPathComponent(file)
-  print(file)
+  //print(file)
+  let path = "/home/ben/Assignment1/Sources/" + file
+  var myStrings = [String]()
   do {
-    let data = try String(contentsOfFile: file, encoding: .utf8)
-    var myStrings = [String]()
-    myStrings += (data.components(separatedBy: .newlines))
-  } catch {
+    let data = try String(contentsOfFile: path, encoding: String.Encoding.utf8)
+    myStrings = data.components(separatedBy: "/n")
+    } catch {
       print("Failed to read file")
       print(error)
-  }
+    }
 return myStrings
 }
 
@@ -37,20 +35,55 @@ func output(input: [String]) {
   }
 }
 
-for argument in CommandLine.arguments {
-    switch argument {
-    case "test1.txt":
-        print("first argument");
-        read(file: argument)
-        output(input: read(file: argument))
-
-    //case "*.txt *.txt":
-    //    print("second argument");
-
+  var nFlag: Bool = false
+  var bFlag: Bool = false
+  var sFlag: Bool = false
+  var vFlag: Bool = false
+  var tFlag: Bool = false
+  var eFlag: Bool = false
+  //retrieve options
+  var option = getopt(CommandLine.argc, CommandLine.unsafeArgv, "nbsvte")
+  while option != -1 {
+    switch UnicodeScalar(CUnsignedChar(option)) {
+    case "n":
+      nFlag = true
+    case "b":
+      bFlag = true
+    case "s":
+      sFlag = true
+    case "v":
+      vFlag = true
+    case "t":
+      tFlag = true
+    case "e":
+      eFlag = true
     default:
-        readStdin()
+      print("Bad option found")
     }
-}
-/*
+    option = getopt(CommandLine.argc, CommandLine.unsafeArgv, "nbsvte")
+  }
 
-*/
+  //find files
+var files = [String] ()
+var j: Int = 0
+  for i in Int(optind)..<CommandLine.arguments.count {
+    files.append(CommandLine.arguments[i])
+    j += 1
+  }
+
+  //Read a file(s)
+  var inputTest = [String?]()
+  let path = "/home/ben/Assignment1/Sources/"
+  var k: Int = 0
+  //trying to detect EOF
+  while try Int32(String(contentsOfFile: path + files[k], encoding: String.Encoding.utf8)) != EOF {
+    inputTest.append(try? String(contentsOfFile: path + files[k], encoding: String.Encoding.utf8))
+    if inputTest[k] != nil {
+      print(inputTest[k]!)
+    } else {
+      print("Failed to read file")
+    }
+    if k<files.count {
+      k += 1
+    }
+  }
