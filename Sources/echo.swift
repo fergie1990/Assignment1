@@ -40,13 +40,35 @@ func readFiles(files: [String]) -> [String] {
   return myStrings
 }
 
-func numberLines(lines: [String]) -> [String] {
+func numberLines(lines: [String], bflag: Bool) -> [String] {
   var numberedLines = [String] ()
+  var count: Int = 1
   for index in 0..<lines.count {
-    numberedLines.append(String(index) + lines[index])
+    if bflag == true && lines[index] == "" {
+      numberedLines.append(lines[index])
+    } else if bflag == true && lines[index] != "" {
+        numberedLines.append(String(count) + "  " + lines[index])
+        count += 1
+    } else {
+        numberedLines.append(String(index) + "  " + lines[index])
+    }
   }
   return numberedLines
 }
+
+func squeezeLines(lines: [String]) -> [String] {
+  var squeezedLines = lines
+  //counting the squeezed lines
+  var scount: Int = 0
+  for index in 1..<lines.count {
+    if lines[index-1] == "" && lines[index] == ""{
+      squeezedLines.remove(at: index - scount)
+      scount += 1
+    }
+  }
+  return squeezedLines
+}
+
 
 //print file contents
 func output(input: [String]) {
@@ -85,11 +107,13 @@ func output(input: [String]) {
   }
 
 var files = findFiles()
-if nFlag == true {
-  var tmp1 = readFiles(files: files)
-  //print("1")
-  var tmp2 = numberLines(lines: tmp1)
-  //print("2")
-  output(input: tmp2)
+var lines = readFiles(files: files)
+if nFlag == true || bFlag == true{
+  var nlines = numberLines(lines: lines, bflag: bFlag)
+  output(input: nlines)
+}
+if sFlag == true {
+  var slines = squeezeLines(lines: lines)
+  output(input: slines)
 }
 
