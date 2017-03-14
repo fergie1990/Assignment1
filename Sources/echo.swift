@@ -11,20 +11,41 @@ func readStdin() {
     line = readLine()
   }
 }
+//find files
+func findFiles() -> [String] {
+  var files = [String] ()
+  var j: Int = 0
+  for i in Int(optind)..<CommandLine.arguments.count {
+    files.append(CommandLine.arguments[i])
+    j += 1
+  }
+  return files
+}
 
-//read from file
-func read (file: String) -> [String]{
-  //print(file)
-  let path = "/home/ben/Assignment1/Sources/" + file
+
+//Read a file(s)
+func readFiles(files: [String]) -> [String] {
+  let path = "/home/ben/Assignment1/Sources/"
   var myStrings = [String]()
-  do {
-    let data = try String(contentsOfFile: path, encoding: String.Encoding.utf8)
-    myStrings = data.components(separatedBy: "/n")
+  var data = String ()
+  for index in 0..<files.count {
+    do {
+      data = try String(contentsOfFile: path + files[index], encoding: String.Encoding.utf8)
+      myStrings += (data.components(separatedBy: "\n"))
     } catch {
       print("Failed to read file")
       print(error)
     }
-return myStrings
+  }
+  return myStrings
+}
+
+func numberLines(lines: [String]) -> [String] {
+  var numberedLines = [String] ()
+  for index in 0..<lines.count {
+    numberedLines.append(String(index) + lines[index])
+  }
+  return numberedLines
 }
 
 //print file contents
@@ -63,27 +84,12 @@ func output(input: [String]) {
     option = getopt(CommandLine.argc, CommandLine.unsafeArgv, "nbsvte")
   }
 
-  //find files
-var files = [String] ()
-var j: Int = 0
-  for i in Int(optind)..<CommandLine.arguments.count {
-    files.append(CommandLine.arguments[i])
-    j += 1
-  }
+var files = findFiles()
+if nFlag == true {
+  var tmp1 = readFiles(files: files)
+  //print("1")
+  var tmp2 = numberLines(lines: tmp1)
+  //print("2")
+  output(input: tmp2)
+}
 
-  //Read a file(s)
-  var inputTest = [String?]()
-  let path = "/home/ben/Assignment1/Sources/"
-  var k: Int = 0
-  //trying to detect EOF
-  while try Int32(String(contentsOfFile: path + files[k], encoding: String.Encoding.utf8)) != EOF {
-    inputTest.append(try? String(contentsOfFile: path + files[k], encoding: String.Encoding.utf8))
-    if inputTest[k] != nil {
-      print(inputTest[k]!)
-    } else {
-      print("Failed to read file")
-    }
-    if k<files.count {
-      k += 1
-    }
-  }
