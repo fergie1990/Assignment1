@@ -1,9 +1,9 @@
 import Foundation
-
+/*
 //read from stdin complete
 func readStdin() {
 
-  var line : String? = ""
+  var line = String? ()
   line = readLine()
 
   while line != nil {
@@ -11,6 +11,7 @@ func readStdin() {
     line = readLine()
   }
 }
+*/
 //find files
 func findFiles() -> [String] {
   var files = [String] ()
@@ -85,7 +86,7 @@ func nonPrinting(lines: [String], tflag: Bool, eflag: Bool) -> [String] {
         controlChar = Int(character.value) + Int(controlVal)
 				catCharacters.append("^")
 				catCharacters.append(Character(UnicodeScalar(controlChar)!))
-      } else if character.value >= 1 && character.value < 32 && character.value != 9 && character.value != 10 && eflag == false {
+      } else if character.value >= 1 && character.value < 32 && character.value != 9 && character.value != 10 && tflag == false{
 				controlChar = Int(character.value) + Int(controlVal)
 				catCharacters.append("^")
 				catCharacters.append(Character(UnicodeScalar(controlChar)!))
@@ -100,6 +101,24 @@ func nonPrinting(lines: [String], tflag: Bool, eflag: Bool) -> [String] {
 		myString.append(catString) 
   }
 return myString
+}
+
+//checkflags
+func checkFlags(line: [String], nflag: Bool, bflag: Bool, sflag: Bool, vflag: Bool, tflag: Bool, eflag: Bool) -> [String] {
+	var myString: [String] = line
+	if vflag == true || tflag == true || eflag == true{
+		myString = nonPrinting(lines: myString, tflag: tflag, eflag: eflag)
+	}
+	if sflag == true {
+		myString = squeezeLines(lines: myString)
+		//output(input: slines)
+	}
+	if nflag == true || bflag == true{
+		myString = numberLines(lines: myString, bflag: bflag)
+		//output(input: nlines)
+	}
+	
+	return myString
 }
 
 //print file contents
@@ -140,22 +159,28 @@ func output(input: [String]) {
 
 var files = findFiles()
 var myString = [String] ()
+
+var input = [String?] ()
+var count: Int = 0
+
 if files.isEmpty == false {
 	for index in 0..<files.count {
 	  myString = readFiles(file: files[index])
-	  if nFlag == true || bFlag == true{
-	    myString = numberLines(lines: myString, bflag: bFlag)
-	    //output(input: nlines)
-	  }
-	  if sFlag == true {
-	    myString = squeezeLines(lines: myString)
-	    //output(input: slines)
-	  }
-	  if vFlag == true || tFlag == true || eFlag == true{
-	    myString = nonPrinting(lines: myString, tflag: tFlag, eflag: eFlag)
-	  }
+	  myString = checkFlags(line: myString, nflag: nFlag, bflag: bFlag, sflag: sFlag, vflag: vFlag, tflag: tFlag, eflag: eFlag)
 		output(input: myString)
 	}
 } else {
-	readStdin()
+	sFlag = false
+  input.insert(readLine(), at: 0)
+	var line: [String] =  [input[0]!]
+	//print(line)
+  while input[count] != nil {
+    line = checkFlags(line: line, nflag: nFlag, bflag: bFlag, sflag: sFlag, vflag: vFlag, tflag: tFlag, eflag: eFlag)
+		print(line[count])
+		//line.removeAll()
+		count += 1
+    input.insert(readLine(), at: count)
+		line = input.flatMap{ $0 }
+		
+	}
 }
