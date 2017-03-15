@@ -24,20 +24,17 @@ func findFiles() -> [String] {
 
 
 //Read a file(s)
-func readFiles(files: [String]) -> [String] {
+func readFiles(file: String) -> [String] {
   let path = "/home/ben/Assignment1/Sources/"
-  var myStrings = [String]()
-  var data = String ()
-  for index in 0..<files.count {
-    do {
-      data = try String(contentsOfFile: path + files[index], encoding: String.Encoding.utf8)
-      myStrings += (data.components(separatedBy: "\n"))
-    } catch {
-      print("Failed to read file")
-      print(error)
-    }
+  var myString = [String] ()
+  do {
+    let data = try String(contentsOfFile: path + file, encoding: String.Encoding.utf8)
+    myString += (data.components(separatedBy: "\n"))
+  } catch {
+    print("Failed to read file")
+    print(error)
   }
-  return myStrings
+  return myString
 }
 
 func numberLines(lines: [String], bflag: Bool) -> [String] {
@@ -69,6 +66,50 @@ func squeezeLines(lines: [String]) -> [String] {
   return squeezedLines
 }
 
+//show non printing
+func nonPrinting(lines: [String]) -> [String]{
+  /*var myString = [String] ()
+  let control: Int8 = 1
+  var controlChar: Int8 = 1
+  print(lines)
+  for i in 0..<lines.count {
+    let nonPrintLines = lines.map { strdup($0) }
+    if nonPrintLines.load(as: UInt8.self) >= 1 && nonPrintLines.load(as: UInt8.self).value < 32 {
+      controlChar = nonPrintLines + control
+      print(controlChar)
+    }
+  }
+  */
+	var newlines = lines
+	var catCharacters = [Character] ()
+	var catString = String ()
+	let control: UnicodeScalar = "@"
+	let controlVal: UInt32 = control.value
+	var controlChar: Int = 1
+	var myString = [String] ()
+  for index in 0..<lines.count {
+		catCharacters.removeAll()
+		newlines[index].append("\n")
+    for character in newlines[index].unicodeScalars {
+      if character.value >= 1 && character.value < 32 {
+        controlChar = Int(character.value) + Int(controlVal)
+				//print("^\(Character(UnicodeScalar(controlChar)!))")
+				catCharacters.append("^")
+				catCharacters.append(Character(UnicodeScalar(controlChar)!))
+      } else {
+        //print(character)
+				catCharacters.append(Character(character))
+      }
+			
+    }
+		//print(catCharacters)
+    catString = String(catCharacters)
+		//print(catString)
+		//print(myString[index])
+		myString.append(catString) 
+  }
+return myString
+}
 
 //print file contents
 func output(input: [String]) {
@@ -107,13 +148,19 @@ func output(input: [String]) {
   }
 
 var files = findFiles()
-var lines = readFiles(files: files)
-if nFlag == true || bFlag == true{
-  var nlines = numberLines(lines: lines, bflag: bFlag)
-  output(input: nlines)
+var myString = [String] ()
+for index in 0..<files.count {
+  myString = readFiles(file: files[index])
+  if nFlag == true || bFlag == true{
+    myString = numberLines(lines: myString, bflag: bFlag)
+    //output(input: nlines)
+  }
+  if sFlag == true {
+    myString = squeezeLines(lines: myString)
+    //output(input: slines)
+  }
+  if vFlag == true || tFlag == true || eFlag == true{
+    myString = nonPrinting(lines: myString)
+  }
 }
-if sFlag == true {
-  var slines = squeezeLines(lines: lines)
-  output(input: slines)
-}
-
+output(input: myString)
