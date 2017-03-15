@@ -47,7 +47,7 @@ func numberLines(lines: [String], bflag: Bool) -> [String] {
         numberedLines.append(String(count) + "  " + lines[index])
         count += 1
     } else {
-        numberedLines.append(String(index) + "  " + lines[index])
+        numberedLines.append(String(index + 1) + "  " + lines[index])
     }
   }
   return numberedLines
@@ -67,19 +67,7 @@ func squeezeLines(lines: [String]) -> [String] {
 }
 
 //show non printing
-func nonPrinting(lines: [String]) -> [String]{
-  /*var myString = [String] ()
-  let control: Int8 = 1
-  var controlChar: Int8 = 1
-  print(lines)
-  for i in 0..<lines.count {
-    let nonPrintLines = lines.map { strdup($0) }
-    if nonPrintLines.load(as: UInt8.self) >= 1 && nonPrintLines.load(as: UInt8.self).value < 32 {
-      controlChar = nonPrintLines + control
-      print(controlChar)
-    }
-  }
-  */
+func nonPrinting(lines: [String], tflag: Bool, eflag: Bool) -> [String] {
 	var newlines = lines
 	var catCharacters = [Character] ()
 	var catString = String ()
@@ -89,23 +77,26 @@ func nonPrinting(lines: [String]) -> [String]{
 	var myString = [String] ()
   for index in 0..<lines.count {
 		catCharacters.removeAll()
-		newlines[index].append("\n")
+		if tflag == true {
+			newlines[index].append("\n")
+		}
     for character in newlines[index].unicodeScalars {
-      if character.value >= 1 && character.value < 32 {
+      if character.value >= 1 && character.value < 32 && tflag == true {
         controlChar = Int(character.value) + Int(controlVal)
-				//print("^\(Character(UnicodeScalar(controlChar)!))")
 				catCharacters.append("^")
 				catCharacters.append(Character(UnicodeScalar(controlChar)!))
-      } else {
-        //print(character)
+      } else if character.value >= 1 && character.value < 32 && character.value != 9 && character.value != 10 && eflag == false {
+				controlChar = Int(character.value) + Int(controlVal)
+				catCharacters.append("^")
+				catCharacters.append(Character(UnicodeScalar(controlChar)!))
+			} else {
 				catCharacters.append(Character(character))
-      }
-			
+      }			
     }
-		//print(catCharacters)
+		if eflag == true {
+			catCharacters.insert("$", at: catCharacters.count)
+		}
     catString = String(catCharacters)
-		//print(catString)
-		//print(myString[index])
 		myString.append(catString) 
   }
 return myString
@@ -149,18 +140,22 @@ func output(input: [String]) {
 
 var files = findFiles()
 var myString = [String] ()
-for index in 0..<files.count {
-  myString = readFiles(file: files[index])
-  if nFlag == true || bFlag == true{
-    myString = numberLines(lines: myString, bflag: bFlag)
-    //output(input: nlines)
-  }
-  if sFlag == true {
-    myString = squeezeLines(lines: myString)
-    //output(input: slines)
-  }
-  if vFlag == true || tFlag == true || eFlag == true{
-    myString = nonPrinting(lines: myString)
-  }
+if files.isEmpty == false {
+	for index in 0..<files.count {
+	  myString = readFiles(file: files[index])
+	  if nFlag == true || bFlag == true{
+	    myString = numberLines(lines: myString, bflag: bFlag)
+	    //output(input: nlines)
+	  }
+	  if sFlag == true {
+	    myString = squeezeLines(lines: myString)
+	    //output(input: slines)
+	  }
+	  if vFlag == true || tFlag == true || eFlag == true{
+	    myString = nonPrinting(lines: myString, tflag: tFlag, eflag: eFlag)
+	  }
+		output(input: myString)
+	}
+} else {
+	readStdin()
 }
-output(input: myString)
