@@ -1,3 +1,7 @@
+cli: cli.swift
+	mkdir -p bin
+	swiftc -o bin/cli cli.swift
+
 echo: echo.swift
 	mkdir -p bin
 	swiftc -o bin/echo echo.swift
