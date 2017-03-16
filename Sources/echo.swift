@@ -1,17 +1,5 @@
 import Foundation
-/*
-//read from stdin complete
-func readStdin() {
 
-  var line = String? ()
-  line = readLine()
-
-  while line != nil {
-    print(line!)
-    line = readLine()
-  }
-}
-*/
 //find files
 func findFiles() -> [String] {
   var files = [String] ()
@@ -22,7 +10,6 @@ func findFiles() -> [String] {
   }
   return files
 }
-
 
 //Read a file(s)
 func readFiles(file: String) -> [String] {
@@ -37,13 +24,15 @@ func readFiles(file: String) -> [String] {
   }
   return myString
 }
-
-func numberLines(lines: [String], bflag: Bool) -> [String] {
+//number lines
+func numberLines(lines: [String], bflag: Bool, nonPrintflag: Bool) -> [String] {
   var numberedLines = [String] ()
   var count: Int = 1
   for index in 0..<lines.count {
-    if bflag == true && lines[index] == "" {
-      numberedLines.append(lines[index])
+    if (bflag == true && nonPrintflag == true) && (lines[index] == "^J" || lines[index] == "$" || lines[index] == ""){
+      	numberedLines.append(lines[index])
+		} else if bflag == true && nonPrintflag == false && lines[index] == "" {
+				numberedLines.append(lines[index])
     } else if bflag == true && lines[index] != "" {
         numberedLines.append(String(count) + "  " + lines[index])
         count += 1
@@ -53,7 +42,7 @@ func numberLines(lines: [String], bflag: Bool) -> [String] {
   }
   return numberedLines
 }
-
+//squeeze lines
 func squeezeLines(lines: [String]) -> [String] {
   var squeezedLines = lines
   //counting the squeezed lines
@@ -66,7 +55,6 @@ func squeezeLines(lines: [String]) -> [String] {
   }
   return squeezedLines
 }
-
 //show non printing
 func nonPrinting(lines: [String], tflag: Bool, eflag: Bool) -> [String] {
 	var newlines = lines
@@ -78,7 +66,7 @@ func nonPrinting(lines: [String], tflag: Bool, eflag: Bool) -> [String] {
 	var myString = [String] ()
   for index in 0..<lines.count {
 		catCharacters.removeAll()
-		if tflag == true {
+		if tflag == true && eflag == false {
 			newlines[index].append("\n")
 		}
     for character in newlines[index].unicodeScalars {
@@ -106,16 +94,16 @@ return myString
 //checkflags
 func checkFlags(line: [String], nflag: Bool, bflag: Bool, sflag: Bool, vflag: Bool, tflag: Bool, eflag: Bool) -> [String] {
 	var myString: [String] = line
-	if vflag == true || tflag == true || eflag == true{
-		myString = nonPrinting(lines: myString, tflag: tflag, eflag: eflag)
-	}
+	var nonPrintflag: Bool = false
 	if sflag == true {
 		myString = squeezeLines(lines: myString)
-		//output(input: slines)
 	}
-	if nflag == true || bflag == true{
-		myString = numberLines(lines: myString, bflag: bflag)
-		//output(input: nlines)
+	if vflag == true || tflag == true || eflag == true {
+		nonPrintflag = true
+		myString = nonPrinting(lines: myString, tflag: tflag, eflag: eflag)
+	}
+	if nflag == true || bflag == true {
+		myString = numberLines(lines: myString, bflag: bflag, nonPrintflag: nonPrintflag)
 	}
 	
 	return myString
@@ -162,7 +150,7 @@ var myString = [String] ()
 
 var input = [String?] ()
 var count: Int = 0
-
+//check files exist otherwise use stdin
 if files.isEmpty == false {
 	for index in 0..<files.count {
 	  myString = readFiles(file: files[index])
@@ -173,11 +161,9 @@ if files.isEmpty == false {
 	sFlag = false
   input.insert(readLine(), at: 0)
 	var line: [String] =  [input[0]!]
-	//print(line)
   while input[count] != nil {
     line = checkFlags(line: line, nflag: nFlag, bflag: bFlag, sflag: sFlag, vflag: vFlag, tflag: tFlag, eflag: eFlag)
 		print(line[count])
-		//line.removeAll()
 		count += 1
     input.insert(readLine(), at: count)
 		line = input.flatMap{ $0 }
