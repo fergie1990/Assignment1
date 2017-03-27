@@ -28,45 +28,66 @@ func cmdHandler(input: String) -> [String] {
 	//iterate each character in string
 	for c in input.characters {
 		//check for "
-		if c == "\"" {
-			if in_quotes == true {
+		//print(c)
+		if escape == false && c == "\"" || c == "\\" {
+		//print("test1")
+			if c == "\\" {
+				//print("test2")
+				escape = true
+			} else if in_quotes == true {
+				//print("test3")
 				in_quotes = false
 				tmpString = String(in_char)
 				output.append(tmpString)
 				in_char.removeAll()
 			} else {
+				//print("test4")
 				in_quotes = true
 			}
-		// if c == "\\" {
-		// 	if escape == true {
-		// 		escape = false
-		// 	} else {
-		// 		escape = true
-		// 	}
-		// }
 		//fill array	 
+	} else if escape == true && c == "\"" || c == "\\" {
+		if !in_char.isEmpty {
+			//print("test5")
+			in_char.append(c)
 		} else {
-			if in_quotes {
+			//print("test6")
+			out_char.append(c)
+		}
+	} else {
+			if in_quotes  {
+				//print("test7")
 				in_char.append(c)
 			} else {
 				//check for next argument
 				if c == " " && out_char.count > 1 {
+					//print("test8")
 					tmpString = String(out_char)
 					output.append(tmpString)
 					out_char.removeAll()
+					//out_char.append(c)
 				} else if !out_char.isEmpty && out_char[0] == " " {
+					//print("test9")
 					out_char.remove(at: 0)
 					out_char.append(c)
-				} else if c != "\"" {
+				} else {
+					//print("test10")
 					out_char.append(c)
 				}
 			}
 		}
+		//print(in_char)
+		//print(out_char)
+		if c != "\\" {
+			escape = false
+		}
 	}
-	if !out_char.isEmpty {
+	if !out_char.isEmpty && out_char[0] != " " {
 		tmpString = String(out_char)
 		output.append(tmpString)
 	}
+	//print(out_char)
+	//print(in_char)
+	//print(output)
 	return output
 }
 
