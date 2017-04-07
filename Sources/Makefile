@@ -1,4 +1,5 @@
 cli: cli.swift
+	rm -f t.txt
 	mkdir -p bin
 	swiftc -o bin/cli cli.swift
 
