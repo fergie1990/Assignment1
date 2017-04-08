@@ -69,7 +69,7 @@ func inputHandler(input: String) -> [String] {
 						output.append(tmpString)
 						out_char.removeAll()
 					}
-				} else if c == "|" || c == ">" || c == ";"{
+				} else if c == "|" || c == ">" || c == "<" || c == ";"{
 					if out_char.count > 0 {
 						tmpString = String(out_char)
 						output.append(tmpString)
@@ -101,7 +101,8 @@ func cmdHandler(arguments: [String]) {
 	//var in_flag: Bool = false
 	var out_flag: Bool = false
 	var inout_flag: Bool = false
-	var redir_flag: Bool = false
+	var redirout_flag: Bool = false
+	var redirin_flag: Bool = false
 	let mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH
 	// first, creat the pipe
 	guard pipe(&pipedes) != -1 else {
@@ -118,7 +119,7 @@ func cmdHandler(arguments: [String]) {
 	}
 	for var i in 0..<arguments.count {
 		print(i)
-		if arguments[i] == "|" || arguments[i] == ">" {
+		if arguments[i] == "|" || arguments[i] == ">" || arguments[i] == "<" {
 			print("test1")
 			if inout_flag == false {
 				//checking if it is the first pipe
@@ -134,14 +135,16 @@ func cmdHandler(arguments: [String]) {
 								exit(EXIT_FAILURE)
 							}
 							tmpargv2.removeAll()
+						} else if arguments[i] == ">" {
+							redirout_flag = true
 						} else {
-							redir_flag = true
+							redirin_flag = true
 						}
 				} else {
 					print("inout")
 					if arguments[i] == ">" {
 						print("redir")
-						redir_flag = true
+						redirout_flag = true
 					} else {
 						print("test2")
 						// then create the second child, running "sort -r"
@@ -168,7 +171,7 @@ func cmdHandler(arguments: [String]) {
 				}
 				tmpargv2.removeAll()
 			}
-		} else if inout_flag == true && redir_flag == true {
+		} else if inout_flag == true && redirout_flag == true {
 			tmpargv2.append(arguments[i])
 			print(pipedes)
 			print(tmpargv2)
@@ -184,7 +187,7 @@ func cmdHandler(arguments: [String]) {
 				exit(EXIT_FAILURE)
 			}
 			tmpargv2.removeAll() 
-		} else if redir_flag == true {
+		} else if redirout_flag == true {
 			tmpargv2.append(arguments[i])
 			print(pipedes)
 			print(tmpargv2)
@@ -200,7 +203,24 @@ func cmdHandler(arguments: [String]) {
 				exit(EXIT_FAILURE)
 			}
 			tmpargv2.removeAll()
-		} else {
+		} else if redirin_flag == true {
+			print("redirin")
+			tmpargv2.append(arguments[i])
+			print(pipedes)
+			print(tmpargv2[tmpargv2.count-1])
+			pipedes[0] = open(tmpargv2[tmpargv2.count-1], O_RDWR)
+			print(pipedes)
+			tmpargv2.remove(at: tmpargv2.count-1)
+			// then create the second child, running "sort -r"
+			let pid5 = spawn(arguments: tmpargv2, in_pipe: pipedes)
+			guard pid5 != -1 else {
+				perror("ls")
+				close(pipedes[0])
+				close(pipedes[1])
+				exit(EXIT_FAILURE)
+			}
+			tmpargv2.removeAll()
+		}else {
 			tmpargv2.append(arguments[i])
 		}
 		i += 1
@@ -217,7 +237,7 @@ func cmdHandler(arguments: [String]) {
 		}
 		tmpargv2.removeAll()
 	}
-	if out_flag == true && redir_flag == false {
+	if out_flag == true && redirout_flag == false && redirin_flag == false{
 		let pid7 = spawn(arguments: tmpargv2, in_pipe: pipedes)
 		guard pid7 != -1 else {
 				perror("ls")
@@ -356,12 +376,11 @@ while cmd != "exit" {
 				cmdHandler(arguments: tmpargv1)
 				tmpargv1.removeAll()
 		} else {
-			print("program found")
-			print(tmpargv1)
-			cmdHandler(arguments: tmpargv1)
-			tmpargv1.removeAll()
+				print("program found")
+				print(tmpargv1)
+				cmdHandler(arguments: tmpargv1)
+				tmpargv1.removeAll()
 		}
-		
 	}
 }
 /*
