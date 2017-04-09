@@ -96,6 +96,7 @@ func inputHandler(input: String) -> [String] {
 func cmdHandler(arguments: [String]) {
 	//declare variables
 	var pipedes: [Int32] = [-1, -1]
+	var pipedes2: [Int32] = [-1, -1]
 	//var tmpargv1 = [String] ()
 	var tmpargv2 = [String] ()
 	//var in_flag: Bool = false
@@ -106,26 +107,36 @@ func cmdHandler(arguments: [String]) {
 	let mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH
 	// first, creat the pipe
 	guard pipe(&pipedes) != -1 else {
-	    perror("pipe")
-	    exit(EXIT_FAILURE)
+			perror("pipe")
+			exit(EXIT_FAILURE)
 	}
+	guard pipe(&pipedes2) != -1 else {
+			perror("pipe")
+			exit(EXIT_FAILURE)
+	}
+	print(pipedes)
+	print(pipedes2)
 	defer {
 		/*
 		 * the pipe is handed off to the children,
 		 * so we should close the parent ends
 		 */
-		close(pipedes[0])
-		close(pipedes[1])
+		 close(pipedes[0])
+ 		 close(pipedes[1])	
+		 close(pipedes2[0])
+ 		 close(pipedes2[1])		
 	}
 	for var i in 0..<arguments.count {
-		print(i)
+		//print(i)
 		if arguments[i] == "|" || arguments[i] == ">" || arguments[i] == "<" {
-			print("test1")
+			//print("test1")
+			//print(pipedes)
 			if inout_flag == false {
 				//checking if it is the first pipe
 				if out_flag == false {
 					out_flag = true
 						if arguments[i] == "|" {
+							print("test1")
 							// then create the first child, running "ls"
 							let pid1 = spawn(arguments: tmpargv2, out_pipe: pipedes)
 							guard pid1 != -1 else {
@@ -141,14 +152,14 @@ func cmdHandler(arguments: [String]) {
 							redirin_flag = true
 						}
 				} else {
-					print("inout")
+					//print("inout")
 					if arguments[i] == ">" {
-						print("redir")
+						//print("redir")
 						redirout_flag = true
 					} else {
 						print("test2")
 						// then create the second child, running "sort -r"
-						let pid2 = spawn(arguments: tmpargv2, in_pipe: pipedes, out_pipe: pipedes)
+						let pid2 = spawn(arguments: tmpargv2, in_pipe: pipedes, out_pipe: pipedes2)
 						guard pid2 != -1 else {
 							perror("ls")
 							close(pipedes[0])
@@ -160,9 +171,9 @@ func cmdHandler(arguments: [String]) {
 					inout_flag = true
 				}
 			} else {
-				print("test2")
+				//print("test2")
 				// then create the second child, running "sort -r"
-				let pid3 = spawn(arguments: tmpargv2, in_pipe: pipedes, out_pipe: pipedes)
+				let pid3 = spawn(arguments: tmpargv2, in_pipe: pipedes, out_pipe: pipedes2)
 				guard pid3 != -1 else {
 					perror("ls")
 					close(pipedes[0])
@@ -173,13 +184,13 @@ func cmdHandler(arguments: [String]) {
 			}
 		} else if inout_flag == true && redirout_flag == true {
 			tmpargv2.append(arguments[i])
-			print(pipedes)
-			print(tmpargv2)
-			pipedes[1] = open(tmpargv2[tmpargv2.count-1], O_RDWR | O_CREAT | O_TRUNC, mode)
-			print(pipedes)
+			//print(pipedes)
+			//print(tmpargv2)
+			pipedes2[1] = open(tmpargv2[tmpargv2.count-1], O_RDWR | O_CREAT | O_TRUNC, mode)
+			//print(pipedes)
 			tmpargv2.remove(at: tmpargv2.count-1)
 			// then create the second child, running "sort -r"
-			let pid4 = spawn(arguments: tmpargv2, in_pipe: pipedes, out_pipe: pipedes)
+			let pid4 = spawn(arguments: tmpargv2, in_pipe: pipedes, out_pipe: pipedes2)
 			guard pid4 != -1 else {
 				perror("ls")
 				close(pipedes[0])
@@ -189,10 +200,10 @@ func cmdHandler(arguments: [String]) {
 			tmpargv2.removeAll() 
 		} else if redirout_flag == true {
 			tmpargv2.append(arguments[i])
-			print(pipedes)
-			print(tmpargv2)
+			//print(pipedes)
+			//print(tmpargv2)
 			pipedes[1] = open(tmpargv2[tmpargv2.count-1], O_RDWR | O_CREAT | O_TRUNC, mode)
-			print(pipedes)
+			//print(pipedes)
 			tmpargv2.remove(at: tmpargv2.count-1)
 			// then create the second child, running "sort -r"
 			let pid5 = spawn(arguments: tmpargv2, out_pipe: pipedes)
@@ -204,12 +215,12 @@ func cmdHandler(arguments: [String]) {
 			}
 			tmpargv2.removeAll()
 		} else if redirin_flag == true {
-			print("redirin")
+			//print("redirin")
 			tmpargv2.append(arguments[i])
-			print(pipedes)
-			print(tmpargv2[tmpargv2.count-1])
+			//print(pipedes)
+			//print(tmpargv2[tmpargv2.count-1])
 			pipedes[0] = open(tmpargv2[tmpargv2.count-1], O_RDWR)
-			print(pipedes)
+			//print(pipedes)
 			tmpargv2.remove(at: tmpargv2.count-1)
 			// then create the second child, running "sort -r"
 			let pid5 = spawn(arguments: tmpargv2, in_pipe: pipedes)
@@ -226,8 +237,8 @@ func cmdHandler(arguments: [String]) {
 		i += 1
 	}
 	if out_flag == false {
-		print("no pipe")
-		print(tmpargv2)
+		//print("no pipe")
+		//print(tmpargv2)
 		let pid6 = spawn(arguments: tmpargv2)
 		guard pid6 != -1 else {
 				perror("ls")
@@ -237,8 +248,9 @@ func cmdHandler(arguments: [String]) {
 		}
 		tmpargv2.removeAll()
 	}
-	if out_flag == true && redirout_flag == false && redirin_flag == false{
-		let pid7 = spawn(arguments: tmpargv2, in_pipe: pipedes)
+	if inout_flag == true && redirout_flag == false && redirin_flag == false{
+		print("test3")
+		let pid7 = spawn(arguments: tmpargv2, in_pipe: pipedes2)
 		guard pid7 != -1 else {
 				perror("ls")
 				close(pipedes[0])
@@ -252,6 +264,14 @@ func cmdHandler(arguments: [String]) {
 func spawn(arguments: [String], in_pipe: [Int32]? = nil, out_pipe: [Int32]? = nil, environment env: [UnsafeMutablePointer<CChar>?]? = nil) -> pid_t? {
     print("spawn")
 		print(arguments)
+		if in_pipe != nil {
+			print("in")
+			print(in_pipe!)
+		}
+		if out_pipe != nil {
+			print("out")
+			print(out_pipe!)
+		}
 		precondition(in_pipe  == nil || in_pipe!.count  == 2)
     precondition(out_pipe == nil || out_pipe!.count == 2)
     let environ = env ?? [nil]
@@ -286,41 +306,13 @@ func spawn(arguments: [String], in_pipe: [Int32]? = nil, out_pipe: [Int32]? = ni
     return pid
 }
 
-//Use posix_spawnp to create a copy of the current process
-func copyProcess(cmd: String, argv: [String]) {
- 	var cargv = argv.map { strdup($0) }
- 	cargv.append(nil)
- 	//free the memory of the array after the process is completed
- 	defer
- 	{
- 		for arg in cargv { free(arg) }
- 	}
- 	//create process ID for the new process
- 	var pid: pid_t = pid_t()
- 	//check if posix_spawnp return failed and print the error
- 	let returnVal: Int32 = posix_spawnp(&pid, cmd, nil, nil, cargv, nil)
- 	if returnVal != 0{
- 		let error: String = String(cString: strerror(returnVal))
- 		print("posix_spwnp failed with: \(error)")
- 		exit(EXIT_FAILURE)
-	}
- var status: Int32 = 0
- let statusReturn = waitpid(pid, &status, 0)
- if statusReturn != -1 {
-		print("Exit sataus: \(wExitStatus(value: status))")
-	}
-}
-
 //declare variables needed
 var input = String ()
 var argv = [String] ()
 var tmpargv1 = [String] ()
 var cmd = String ()
-
-var inp = String ()
-var outp = String ()
 defer {
-	print("waiting")
+	//print("waiting")
 	// finally, wait for the children to exit
 	repeat {
 			var status = Int32(-1)
@@ -361,127 +353,25 @@ while cmd != "exit" {
 	if cmd == "cd"{
 		chdir(argv[1])
 	}
-	print(argv.count - 1)
+	//print(argv.count - 1)
 	for var j in 0..<argv.count {
-		print(j)
+		//print(j)
 		if argv[j] != ";" && j != argv.count - 1 {
 			tmpargv1.append(argv[j])
-			print(tmpargv1)
+			//print(tmpargv1)
 		} else if argv[j] != ";" && j < argv.count - 1{
 			tmpargv1.append(argv[j])
 		} else if j == argv.count - 1 {
 				tmpargv1.append(argv[j])
-				print("program found")
-				print(tmpargv1)
+				//print("program found")
+				//print(tmpargv1)
 				cmdHandler(arguments: tmpargv1)
 				tmpargv1.removeAll()
 		} else {
-				print("program found")
-				print(tmpargv1)
+				//print("program found")
+				//print(tmpargv1)
 				cmdHandler(arguments: tmpargv1)
 				tmpargv1.removeAll()
 		}
 	}
 }
-/*
-if arguments[i] == "|" && in_flag == false {
-	print("test1")
-	in_flag = true
-	// then create the first child, running "ls"
-	let pid1 = spawn(arguments: tmpargv2, out_pipe: pipedes)
-	guard pid1 != -1 else {
-			perror("ls")
-			close(pipedes[0])
-			close(pipedes[1])
-			exit(EXIT_FAILURE)
-	}
-	tmpargv2.removeAll()
-} else if arguments[i] == "|" && in_flag == true {
-print("test2")
-out_flag = true
-// then create the first child, running "ls"
-let pid2 = spawn(arguments: tmpargv2, in_pipe: pipedes, out_pipe: pipedes)
-guard pid2 != -1 else {
-		perror("ls")
-		close(pipedes[0])
-		close(pipedes[1])
-		exit(EXIT_FAILURE)
-}
-tmpargv2.removeAll()
-in_flag = false
-} else if arguments[i] == ">" {
-if in_flag == true {
-print("redir2")
-out_flag = true
-}
-redir_flag = true
-// print(pipedes)
-// print(tmpargv2[tmpargv2.count-1])
-// 
-// pipedes[1] = open(tmpargv2[tmpargv2.count-1], O_RDWR | O_CREAT | O_TRUNC, mode)
-// print(pipedes)
-// print(tmpargv2)
-// // then create the second child, running "sort -r"
-// let pid4 = spawn(arguments: tmpargv2, in_pipe: pipedes, out_pipe: pipedes)
-// guard pid4 != -1 else {
-// 		perror("ls")
-// 		close(pipedes[0])
-// 		close(pipedes[1])
-// 		exit(EXIT_FAILURE)
-// }
-//tmpargv2.removeAll()
-} else if redir_flag == true && out_flag == false{
-	tmpargv2.append(arguments[i])
-	print(pipedes)
-	print(tmpargv2)
-	pipedes[1] = open(tmpargv2[tmpargv2.count-1], O_RDWR | O_CREAT | O_TRUNC, mode)
-	print(pipedes)
-	tmpargv2.remove(at: tmpargv2.count-1)
-	// then create the second child, running "sort -r"
-	let pid4 = spawn(arguments: tmpargv2, out_pipe: pipedes)
-	guard pid4 != -1 else {
-			perror("ls")
-			close(pipedes[0])
-			close(pipedes[1])
-			exit(EXIT_FAILURE)
-	}
-	tmpargv2.removeAll()
-} else if redir_flag == true  && out_flag == true {
-		
-		print("out_flag")
-		// let pid4 = spawn(arguments: tmpargv2, in_pipe: pipedes, out_pipe: pipedes)
-		// guard pid4 != -1 else {
-		//     perror("ls")
-		//     close(pipedes[0])
-		//     close(pipedes[1])
-		//     exit(EXIT_FAILURE)
-		// }
-		tmpargv2.append(arguments[i])
-		print(pipedes)
-		print(tmpargv2)
-		pipedes[1] = open(tmpargv2[tmpargv2.count-1], O_RDWR | O_CREAT | O_TRUNC, mode)
-		print(pipedes)
-		tmpargv2.remove(at: tmpargv2.count-1)
-		// then create the second child, running "sort -r"
-		let pid6 = spawn(arguments: tmpargv2, in_pipe: pipedes, out_pipe: pipedes)
-		guard pid6 != -1 else {
-				perror("ls")
-				close(pipedes[0])
-				close(pipedes[1])
-				exit(EXIT_FAILURE)
-		}
-		tmpargv2.removeAll()
-	} else if i == arguments.count - 1 && out_flag == true {
-		print("test3")
-		tmpargv2.append(arguments[i])
-		let pid5 = spawn(arguments: tmpargv2, in_pipe: pipedes)
-		guard pid5 != -1 else {
-				perror("ls")
-				close(pipedes[0])
-				close(pipedes[1])
-				exit(EXIT_FAILURE)
-		}
-} else {
-	tmpargv2.append(arguments[i])
-}
-*/
