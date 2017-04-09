@@ -16,7 +16,7 @@ func readStdin() -> String{
 	return tmp
 }
 
-//handle command line arguments
+//handle the arguments from user input
 func inputHandler(input: String) -> [String] {
 	//declare variables
 	var in_quotes: Bool = false 
@@ -27,7 +27,7 @@ func inputHandler(input: String) -> [String] {
 	var output = [String] ()
 	//iterate each character in string
 	for c in input.characters {
-		//check for "
+		//check if character is quotes or backslash
 		if c == "\"" || c == "\\" {
 			if c == "\\" {
 				if escape == true {
@@ -40,6 +40,7 @@ func inputHandler(input: String) -> [String] {
 				} else {
 					escape = true
 				}
+		//check if the character is inside quotes
 		} else if in_quotes == true {
 			if escape == false {
 				in_quotes = false
@@ -49,6 +50,7 @@ func inputHandler(input: String) -> [String] {
 			} else {
 				in_char.append(c)
 			}
+		//trigger in quotes flag
 		} else {
 			in_quotes = true
 			if out_char.count > 0 {
@@ -62,13 +64,14 @@ func inputHandler(input: String) -> [String] {
 			if in_quotes  {
 				in_char.append(c)
 			} else {
-				//check for next argument
-				if c == " "{
+				//check if the character is a space
+				if c == " " {
 					if out_char.count > 0 {
 						tmpString = String(out_char)
 						output.append(tmpString)
 						out_char.removeAll()
 					}
+				//check if the character is a special character
 				} else if c == "|" || c == ">" || c == "<" || c == ";"{
 					if out_char.count > 0 {
 						tmpString = String(out_char)
@@ -76,36 +79,36 @@ func inputHandler(input: String) -> [String] {
 						out_char.removeAll()
 					}
 					output.append(String(c))
+				//character is a regular character
 				} else {
 					out_char.append(c)
 				}
 			}
 		}
+		//reset escape flag
 		if c != "\\" {
 			escape = false
 		} 
 	}
+	//add the remaining argument
 	if out_char.count > 1 && out_char[0] != " " {
 		tmpString = String(out_char)
 		output.append(tmpString)
 	}
-	print(output)
 	return output
 }
-
+//handles arguments, and any piping and file redirection needed
 func cmdHandler(arguments: [String]) {
 	//declare variables
 	var pipedes: [Int32] = [-1, -1]
 	var pipedes2: [Int32] = [-1, -1]
-	//var tmpargv1 = [String] ()
 	var tmpargv2 = [String] ()
-	//var in_flag: Bool = false
 	var out_flag: Bool = false
 	var inout_flag: Bool = false
 	var redirout_flag: Bool = false
 	var redirin_flag: Bool = false
 	let mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH
-	// first, creat the pipe
+	//creat the pipes
 	guard pipe(&pipedes) != -1 else {
 			perror("pipe")
 			exit(EXIT_FAILURE)
@@ -114,11 +117,9 @@ func cmdHandler(arguments: [String]) {
 			perror("pipe")
 			exit(EXIT_FAILURE)
 	}
-	print(pipedes)
-	print(pipedes2)
 	defer {
 		/*
-		 * the pipe is handed off to the children,
+		 * the pipes are handed off to the children,
 		 * so we should close the parent ends
 		 */
 		 close(pipedes[0])
@@ -126,18 +127,17 @@ func cmdHandler(arguments: [String]) {
 		 close(pipedes2[0])
  		 close(pipedes2[1])		
 	}
+	//iterate over the input arguments
 	for var i in 0..<arguments.count {
-		//print(i)
+		//Check for pipes or redirection
 		if arguments[i] == "|" || arguments[i] == ">" || arguments[i] == "<" {
-			//print("test1")
-			//print(pipedes)
+			//checking if there has been more than two occurrences
 			if inout_flag == false {
-				//checking if it is the first pipe
+				//checking if it is the first occurrence
 				if out_flag == false {
 					out_flag = true
 						if arguments[i] == "|" {
-							print("test1")
-							// then create the first child, running "ls"
+							//create a child
 							let pid1 = spawn(arguments: tmpargv2, out_pipe: pipedes)
 							guard pid1 != -1 else {
 								perror("ls")
@@ -146,19 +146,19 @@ func cmdHandler(arguments: [String]) {
 								exit(EXIT_FAILURE)
 							}
 							tmpargv2.removeAll()
+						//setting flag for redirection out
 						} else if arguments[i] == ">" {
 							redirout_flag = true
+						//setting flag for redirection out
 						} else {
 							redirin_flag = true
 						}
+				//second occurrence 
 				} else {
-					//print("inout")
 					if arguments[i] == ">" {
-						//print("redir")
 						redirout_flag = true
 					} else {
-						print("test2")
-						// then create the second child, running "sort -r"
+						//create another child
 						let pid2 = spawn(arguments: tmpargv2, in_pipe: pipedes, out_pipe: pipedes2)
 						guard pid2 != -1 else {
 							perror("ls")
@@ -170,9 +170,9 @@ func cmdHandler(arguments: [String]) {
 					}
 					inout_flag = true
 				}
+			//third occurrence
 			} else {
-				//print("test2")
-				// then create the second child, running "sort -r"
+				//create another child
 				let pid3 = spawn(arguments: tmpargv2, in_pipe: pipedes, out_pipe: pipedes2)
 				guard pid3 != -1 else {
 					perror("ls")
@@ -182,14 +182,14 @@ func cmdHandler(arguments: [String]) {
 				}
 				tmpargv2.removeAll()
 			}
+		//if argument is not pipe or redirection
+		//checking for pipe chained with >
 		} else if inout_flag == true && redirout_flag == true {
 			tmpargv2.append(arguments[i])
-			//print(pipedes)
-			//print(tmpargv2)
+			//replace write part of pipe to the file descriptor of file
 			pipedes2[1] = open(tmpargv2[tmpargv2.count-1], O_RDWR | O_CREAT | O_TRUNC, mode)
-			//print(pipedes)
 			tmpargv2.remove(at: tmpargv2.count-1)
-			// then create the second child, running "sort -r"
+			//create another child
 			let pid4 = spawn(arguments: tmpargv2, in_pipe: pipedes, out_pipe: pipedes2)
 			guard pid4 != -1 else {
 				perror("ls")
@@ -198,14 +198,13 @@ func cmdHandler(arguments: [String]) {
 				exit(EXIT_FAILURE)
 			}
 			tmpargv2.removeAll() 
+		//redirection out
 		} else if redirout_flag == true {
 			tmpargv2.append(arguments[i])
-			//print(pipedes)
-			//print(tmpargv2)
+			//replace write part of pipe to the file descriptor of file
 			pipedes[1] = open(tmpargv2[tmpargv2.count-1], O_RDWR | O_CREAT | O_TRUNC, mode)
-			//print(pipedes)
 			tmpargv2.remove(at: tmpargv2.count-1)
-			// then create the second child, running "sort -r"
+			//create another child
 			let pid5 = spawn(arguments: tmpargv2, out_pipe: pipedes)
 			guard pid5 != -1 else {
 				perror("ls")
@@ -214,15 +213,12 @@ func cmdHandler(arguments: [String]) {
 				exit(EXIT_FAILURE)
 			}
 			tmpargv2.removeAll()
+		//redirection in
 		} else if redirin_flag == true {
-			//print("redirin")
 			tmpargv2.append(arguments[i])
-			//print(pipedes)
-			//print(tmpargv2[tmpargv2.count-1])
+			//replace read part of pipe to the file descriptor of file
 			pipedes[0] = open(tmpargv2[tmpargv2.count-1], O_RDWR)
-			//print(pipedes)
 			tmpargv2.remove(at: tmpargv2.count-1)
-			// then create the second child, running "sort -r"
 			let pid5 = spawn(arguments: tmpargv2, in_pipe: pipedes)
 			guard pid5 != -1 else {
 				perror("ls")
@@ -236,9 +232,8 @@ func cmdHandler(arguments: [String]) {
 		}
 		i += 1
 	}
+	//no pipes or redirection was used
 	if out_flag == false {
-		//print("no pipe")
-		//print(tmpargv2)
 		let pid6 = spawn(arguments: tmpargv2)
 		guard pid6 != -1 else {
 				perror("ls")
@@ -248,9 +243,8 @@ func cmdHandler(arguments: [String]) {
 		}
 		tmpargv2.removeAll()
 	}
-	if inout_flag == true && redirout_flag == false && redirin_flag == false{
-		print("test3")
-		let pid7 = spawn(arguments: tmpargv2, in_pipe: pipedes2)
+	if inout_flag == false && out_flag == true {
+		let pid7 = spawn(arguments: tmpargv2, in_pipe: pipedes)
 		guard pid7 != -1 else {
 				perror("ls")
 				close(pipedes[0])
@@ -259,20 +253,22 @@ func cmdHandler(arguments: [String]) {
 		}
 		tmpargv2.removeAll()
 	}
+	//the end argument of a chain of pipes
+	if inout_flag == true && redirout_flag == false && redirin_flag == false{
+		print("test3")
+		let pid8 = spawn(arguments: tmpargv2, in_pipe: pipedes2)
+		guard pid8 != -1 else {
+				perror("ls")
+				close(pipedes[0])
+				close(pipedes[1])
+				exit(EXIT_FAILURE)
+		}
+		tmpargv2.removeAll()
+	}
 }
-
+//spawns a child process with the arguments given
 func spawn(arguments: [String], in_pipe: [Int32]? = nil, out_pipe: [Int32]? = nil, environment env: [UnsafeMutablePointer<CChar>?]? = nil) -> pid_t? {
-    print("spawn")
-		print(arguments)
-		if in_pipe != nil {
-			print("in")
-			print(in_pipe!)
-		}
-		if out_pipe != nil {
-			print("out")
-			print(out_pipe!)
-		}
-		precondition(in_pipe  == nil || in_pipe!.count  == 2)
+    precondition(in_pipe  == nil || in_pipe!.count  == 2)
     precondition(out_pipe == nil || out_pipe!.count == 2)
     let environ = env ?? [nil]
 		#if os(macOS)
@@ -305,14 +301,13 @@ func spawn(arguments: [String], in_pipe: [Int32]? = nil, out_pipe: [Int32]? = ni
     if rv != 0 { perror("posix_spawnp") ; return nil }
     return pid
 }
-
+//Main
 //declare variables needed
 var input = String ()
 var argv = [String] ()
 var tmpargv1 = [String] ()
 var cmd = String ()
 defer {
-	//print("waiting")
 	// finally, wait for the children to exit
 	repeat {
 			var status = Int32(-1)
@@ -345,31 +340,26 @@ defer {
 //continue to read commands until user enters "exit"
 while cmd != "exit" {
 	print("Please enter the command: ")
-	//print(argv)
 	//create array of arguments from standard input
 	input = readStdin()
+	//sent input to be sorted
 	argv = inputHandler(input: input)
 	cmd = argv[0]
+	//check for cd command
 	if cmd == "cd"{
 		chdir(argv[1])
 	}
-	//print(argv.count - 1)
+	//iterate the input array to find any semi colons
 	for var j in 0..<argv.count {
-		//print(j)
 		if argv[j] != ";" && j != argv.count - 1 {
 			tmpargv1.append(argv[j])
-			//print(tmpargv1)
 		} else if argv[j] != ";" && j < argv.count - 1{
 			tmpargv1.append(argv[j])
 		} else if j == argv.count - 1 {
 				tmpargv1.append(argv[j])
-				//print("program found")
-				//print(tmpargv1)
 				cmdHandler(arguments: tmpargv1)
 				tmpargv1.removeAll()
 		} else {
-				//print("program found")
-				//print(tmpargv1)
 				cmdHandler(arguments: tmpargv1)
 				tmpargv1.removeAll()
 		}
